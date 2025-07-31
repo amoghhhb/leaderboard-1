@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Game Leaderboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap"
+        rel="stylesheet">
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        'inter': ['Inter', 'sans-serif'],
+                        'mono': ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        'bg-primary': '#0a0e27',
+                        'bg-secondary': '#1a1f3a',
+                        'bg-tertiary': '#2d3561',
+                        'text-accent': '#64ffda',
+                    },
+                    animation: {
+                        'trophy-glow': 'trophy-glow 2s ease-in-out infinite alternate',
+                    },
+                    keyframes: {
+                        'trophy-glow': {
+                            'from': { transform: 'scale(1)', filter: 'drop-shadow(0 0 8px rgba(255, 215, 0, 0.4))' },
+                            'to': { transform: 'scale(1.1)', filter: 'drop-shadow(0 0 16px rgba(255, 215, 0, 0.8))' }
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <script>
+        const API_URL = "https://webverse-production.up.railway.app/api/leaderboard";
+
+        function getTrophyIcon(rank) {
+            switch (rank) {
+                case 1: return '<span class="text-2xl trophy-gold animate-trophy-glow">🥇</span>';
+                case 2: return '<span class="text-2xl trophy-silver">🥈</span>';
+                case 3: return '<span class="text-2xl trophy-bronze">🥉</span>';
+                default: return rank;
+            }
+        }
+
+        function getPodiumClass(rank) {
+            switch (rank) {
+                case 1: return 'podium-1';
+                case 2: return 'podium-2';
+                case 3: return 'podium-3';
+                default: return '';
+            }
+        }
+
+        function formatTime(totalSeconds) {
+            if (isNaN(totalSeconds) || totalSeconds === null) {
+                return "00:00";
+            }
+            const minutes = Math.floor(totalSeconds / 60);
+            const seconds = totalSeconds % 60;
+
+            return `${String(minutes).padStart(2, '0')}:${String(seconds).padStart(2, '0')}`;
+        }
+        
+        async function fetchLeaderboard() {
+            try {
+                const res = await fetch(API_URL);
+                const data = await res.json();
+                
+                const leaderboard = data.data.map(player => {
+                    // Define a maximum possible score. Adjust this as needed.
+                    const MAX_SCORE = 1000; 
+
+                    // Calculate score: faster time = higher score.
+                    // Math.max ensures the score is never less than 0.
+                    const score = Math.max(0, MAX_SCORE - (player.timeTaken || 0));
+
+                    return {
+                        name: player.name || "N/A",
+                        department: player.department || "N/A",
+                        timeTaken: formatTime(player.timeTaken),
+                        score: player.score || 0 // Use the new time-based score
+                    };
+                });
+
+                // Sort by score (desc), then by time (asc) for tie-breaking
+                leaderboard.sort((a, b) => {
+                    if (b.score !== a.score) {
+                        return b.score - a.score;
+                    }
+                    return a.timeTaken.localeCompare(b.timeTaken);
+                });
+
+                leaderboard.forEach((p, i) => p.rank = i + 1);
+
+                updateLeaderboardUI(leaderboard);
+            } catch (error) {
+                console.error("Error fetching leaderboard:", error);
+            }
+        }
+
+        function updateLeaderboardUI(players) {
+            const tbody = document.getElementById("leaderboard-body");
+            tbody.innerHTML = "";
+
+            players.forEach(player => {
+                const row = document.createElement("tr");
+                row.className = `border-b border-white/5 ${getPodiumClass(player.rank)}`;
+
+                row.innerHTML = `
+                        <td class="p-4 text-center font-bold font-mono">${getTrophyIcon(player.rank)}</td>
+                        <td class="p-4 font-semibold text-white">${player.name}</td>
+                        <td class="p-4 text-gray-300 text-sm">${player.department}</td>
+                        <td class="p-4 text-center font-mono font-semibold">
+                            <span class="text-green-400">${player.timeTaken}</span>
+                        </td>
+                        <td class="p-4 text-center font-mono font-semibold text-text-accent">${player.score}</td>
+                `;
+                tbody.appendChild(row);
+            });
+        }
+
+        document.addEventListener("DOMContentLoaded", () => {
+            fetchLeaderboard(); // Fetch immediately on load
+            setInterval(fetchLeaderboard, 3000); // Refresh data every 3 seconds
+            
+            // Set the copyright year dynamically
+            document.getElementById("current-year").textContent = new Date().getFullYear();
+        });
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .gradient-bg {
+            background: linear-gradient(135deg, #0a0e27 0%, #1a1f3a 50%, #2d3561 100%);
+        }
+        .glass-card {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+        }
+        .text-gradient {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+        .trophy-gold { filter: drop-shadow(0 0 8px rgba(255, 215, 0, 0.6)); }
+        .trophy-silver { filter: drop-shadow(0 0 8px rgba(192, 192, 192, 0.6)); }
+        .trophy-bronze { filter: drop-shadow(0 0 8px rgba(205, 127, 50, 0.6)); }
+        .podium-1 { background: rgba(255, 215, 0, 0.05); }
+        .podium-2 { background: rgba(192, 192, 192, 0.05); }
+        .podium-3 { background: rgba(205, 127, 50, 0.05); }
+    </style>
+</head>
+
+<body class="min-h-screen gradient-bg text-gray-200">
+    <div class="relative w-full py-8 px-4">
+        <div id="main-content"
+            class="glass-card border border-white/10 rounded-3xl p-6 md:p-10 lg:p-12 shadow-2xl w-full max-w-4xl mx-auto relative z-10">
+            <header class="text-center mb-12">
+                <h1 class="text-3xl md:text-4xl lg:text-5xl font-bold mb-4 text-gradient uppercase tracking-widest">
+                    🏆 Game Leaderboard</h1>
+            </header>
+
+            <section>
+                <h2 class="text-2xl font-semibold mb-6 text-white text-center uppercase tracking-wider">Top Players</h2>
+                <div class="overflow-x-auto rounded-2xl border border-white/10">
+                    <table class="w-full border-collapse text-sm md:text-base">
+                        <thead>
+                            <tr class="bg-white/5">
+                                <th class="text-gray-300 font-semibold p-4 text-center border-b border-white/10 uppercase tracking-wider text-xs md:text-sm">Rank</th>
+                                <th class="text-gray-300 font-semibold p-4 text-left border-b border-white/10 uppercase tracking-wider text-xs md:text-sm">Player</th>
+                                <th class="text-gray-300 font-semibold p-4 text-left border-b border-white/10 uppercase tracking-wider text-xs md:text-sm">Department</th>
+                                <th class="text-gray-300 font-semibold p-4 text-center border-b border-white/10 uppercase tracking-wider text-xs md:text-sm">Time</th>
+                                <th class="text-gray-300 font-semibold p-4 text-center border-b border-white/10 uppercase tracking-wider text-xs md:text-sm">Score</th>
+                            </tr>
+                        </thead>
+                        <tbody id="leaderboard-body">
+                            </tbody>
+                    </table>
+                </div>
+            </section>
+            
+            <footer class="text-center pt-8 mt-8 border-t border-white/5 text-gray-400 text-sm">
+                <p>World Wide Web Day Challenge © <span id="current-year"></span></p>
+            </footer>
+        </div>
+    </div>
+</body>
+</html>
