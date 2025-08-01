@@ -114,13 +114,13 @@
                 row.className = `border-b border-white/5 ${getPodiumClass(player.rank)}`;
 
                 row.innerHTML = `
-                        <td class="p-4 text-center font-bold font-mono">${getTrophyIcon(player.rank)}</td>
-                        <td class="p-4 font-semibold text-white">${player.name}</td>
-                        <td class="p-4 text-gray-300 text-sm">${player.department}</td>
-                        <td class="p-4 text-center font-mono font-semibold">
-                            <span class="text-green-400">${player.timeTaken}</span>
-                        </td>
-                        <td class="p-4 text-center font-mono font-semibold text-text-accent">${player.score}</td>
+                            <td class="p-4 text-center font-bold font-mono">${getTrophyIcon(player.rank)}</td>
+                            <td class="p-4 font-semibold text-white">${player.name}</td>
+                            <td class="p-4 text-gray-300 text-sm">${player.department}</td>
+                            <td class="p-4 text-center font-mono font-semibold">
+                                <span class="text-green-400">${player.timeTaken}</span>
+                            </td>
+                            <td class="p-4 text-center font-mono font-semibold text-text-accent">${player.score}</td>
                 `;
                 tbody.appendChild(row);
             });
@@ -128,7 +128,7 @@
 
         document.addEventListener("DOMContentLoaded", () => {
             fetchLeaderboard(); // Fetch immediately on load
-            setInterval(fetchLeaderboard, 3000); // Refresh data every 3 seconds
+            setInterval(fetchLeaderboard, 7000); // Refresh data every 7 seconds
             
             // Set the copyright year dynamically
             document.getElementById("current-year").textContent = new Date().getFullYear();
